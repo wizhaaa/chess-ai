@@ -10,3 +10,16 @@
   font-size: 3em;
   padding: 46px 0;
 }
+
+button {
+  border: none;
+  background: #fff;
+
+  padding: 16px;
+  margin-bottom: 64px;
+
+  cursor: pointer;
+}
+button:hover {
+  background-color: #b7b7b7;
+}

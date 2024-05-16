@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useState, useMemo} from "react";
 import "./App.css";
 import Chessboard from "chessboardjsx";
 
@@ -8,7 +8,7 @@ import {makeBotMove} from "./AI";
 
 function App() {
   // game logic
-  const chess = new Chess(DEFAULT_POSITION);
+  const chess = useMemo(() => new Chess(DEFAULT_POSITION), []);
   // console.log(validateFen(chess.fen()));
 
   const [position, setPosition] = useState(DEFAULT_POSITION);
@@ -20,17 +20,22 @@ function App() {
   function move() {
     try {
       // chess.move({from: "b2", to: "b4"});
-      chess.move("e4");
+      chess.move("Na3");
       // chess.move("Nf6");
       setPosition(chess.fen());
     } catch {
       alert("Invalid Move");
     }
+    console.log("Moves available after moves:");
+    console.log(chess.moves());
   }
 
   function botMove() {
     try {
+      console.log("Bot Moves");
+      console.log(chess.moves());
       const newPosition = makeBotMove(chess);
+
       setPosition(newPosition);
     } catch (e) {
       alert("Error in making bot move");
