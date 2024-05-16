@@ -5,3 +5,8 @@
   text-align: center;
 }
 
+.title {
+  font-weight: 700;
+  font-size: 3em;
+  padding: 46px 0;
+}
