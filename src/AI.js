@@ -5,16 +5,16 @@ function evaluateBoard(board) {
   // Simple evaluation function: count the material advantage of white over black
   const pieceValues = {
     p: -1,
-    n: -3,
-    b: -3,
-    r: -5,
-    q: -9,
+    n: -5,
+    b: -5,
+    r: -8,
+    q: -50,
     k: -100,
     P: 1,
-    N: 3,
-    B: 3,
-    R: 5,
-    Q: 9,
+    N: 5,
+    B: 5,
+    R: 8,
+    Q: 50,
     K: 100,
   };
 
@@ -28,7 +28,6 @@ function evaluateBoard(board) {
         evaluation += pieceValues[piece] || 0;
       });
   });
-
   return evaluation;
 }
 
@@ -104,7 +103,7 @@ export function makeBotMove(game) {
   const bestMove = findBestMove(game, 3); // Adjust depth for stronger/weaker play
   game.move(bestMove);
   console.log("Bot's Move:", bestMove);
-  return game.fen();
+  return game;
 }
 
 // Example: Make the bot play against itself until the game ends

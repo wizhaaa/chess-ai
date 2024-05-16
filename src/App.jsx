@@ -1,6 +1,6 @@
-import {useState, useMemo} from "react";
+import {useState, useMemo, useCallback} from "react";
 import "./App.css";
-import Chessboard from "chessboardjsx";
+import {Chessboard} from "react-chessboard";
 
 import {Chess, DEFAULT_POSITION} from "chess.js";
 
@@ -9,12 +9,36 @@ import {makeBotMove} from "./AI";
 function App() {
   // game logic
   const chess = useMemo(() => new Chess(DEFAULT_POSITION), []);
+  const [game, setGame] = useState(new Chess(DEFAULT_POSITION));
   // console.log(validateFen(chess.fen()));
 
   const [position, setPosition] = useState(DEFAULT_POSITION);
+  const [gameOver, setGameOver] = useState("");
 
   function resetBoard() {
     setPosition(DEFAULT_POSITION);
+  }
+
+  function handleDrop(from, to) {
+    const moveData = {
+      from: from,
+      to: to,
+      color: chess.turn(),
+      promotion: "q",
+    };
+    const move = makeAMove(moveData);
+    if (move === null) {
+      alert("Can not drop");
+      return false;
+    }
+    return true;
+  }
+
+  function makeAMove(move) {
+    const gameCopy = {...game};
+    const result = gameCopy.move(move);
+    setGame(gameCopy);
+    return result;
   }
 
   function move() {
@@ -32,11 +56,12 @@ function App() {
 
   function botMove() {
     try {
-      console.log("Bot Moves");
-      console.log(chess.moves());
-      const newPosition = makeBotMove(chess);
+      console.log("Bot Move Options:");
+      console.log(game.moves());
+      const newGame = makeBotMove(game);
+      // setGame(newGame);
 
-      setPosition(newPosition);
+      setPosition(newGame.fen());
     } catch (e) {
       alert("Error in making bot move");
       console.log(e);
@@ -50,21 +75,19 @@ function App() {
       <button onClick={move}> Move </button>
       <button onClick={botMove}> AI MOVE </button>
       <Chessboard
-        width={700}
-        position={position}
-        transitionDuration={100}
-        boardStyle={{
-          borderRadius: "10px",
-        }}
-        lightSquareStyle={{
+        onDrop={handleDrop}
+        boardWidth={700}
+        position={game.fen()}
+        // transitionDuration={100}
+        customeLightSquareStyle={{
           background: "#ececcc",
         }}
-        darkSquareStyle={{
+        customDarkSquareStyle={{
           background: "#698c4c",
         }}
-        dropSquareStyle={{
-          boxShadow: "inset 0 0 1px 4px #000",
-        }}
+        // dropSquareStyle={{
+        //   boxShadow: "inset 0 0 1px 4px #000",
+        // }}
       />
     </div>
   );
