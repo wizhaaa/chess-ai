@@ -207,7 +207,7 @@ function findBestMove(board, depth) {
  * @param game (Chess object)
  * @returns the fen for the game
  */
-export function ericBotMove(game) {
+export function naiveBotMoveTimed(game) {
   nodesSearched = 0;
   console.time("searchTime");
   const bestMove = findBestMove(game, 3); // Adjust depth for stronger/weaker play
