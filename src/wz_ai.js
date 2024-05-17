@@ -211,11 +211,13 @@ function getBestMove(game) {
 }
 
 function calculateDepth(game) {
-  // var totalPieces = game.fen().split(\\" \\", 1)[0].replace(/[\\\\d\\/]/g, '').length
-  // if (totalPieces > 14) { return 2; } else { return 4; }
-  return 3;
+  var totalPieces = game.fen().split(" ")[0].replace(/\d+\//g, "").length;
+  if (totalPieces > 14) {
+    return 3;
+  } else {
+    return 4;
+  }
 }
-
 const game = new Chess(DEFAULT_POSITION);
 
 console.log(makeBestMove(game));
