@@ -165,8 +165,10 @@ function minimax(depth, game, alpha, beta, isMaximisingPlayer) {
 
 function negamax(chess, depth, alpha, beta, colorSign) {
   var bestMove = null;
+  const weight = Math.random() * (2 - 0.5) + 0.5;
+
   if (depth === 0) {
-    return {eval: colorSign * evaluateBoard(chess), move: bestMove};
+    return {eval: colorSign * weight * evaluateBoard(chess), move: bestMove};
   }
   var moves = chess.moves({verbose: true});
   for (var i = 0; i < moves.length; i++) {

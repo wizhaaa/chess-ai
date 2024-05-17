@@ -1,4 +1,4 @@
-import {useState, useMemo} from "react";
+import {useState, useMemo, useEffect} from "react";
 import "./App.css";
 import {Chessboard} from "react-chessboard";
 
@@ -12,6 +12,23 @@ function App() {
 
   const [position, setPosition] = useState(DEFAULT_POSITION);
   const [turnNum, setTurnNum] = useState(0);
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "a") botMove();
+      if (event.key === "u") undo();
+      if (event.key === "r") resetBoard();
+      if (event.key === "s") runSimulation();
+    };
+
+    // Add event listener when component mounts
+    document.addEventListener("keydown", handleKeyPress);
+
+    // Clean up the event listener when component unmounts
+    return () => {
+      document.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []); // Empty dependency array ensures that the effect runs only once on mount
 
   function resetBoard() {
     try {
@@ -51,16 +68,21 @@ function App() {
     }
   }
 
-  function simulation() {
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function runSimulation() {
     for (let i = 0; i < 10; i++) {
       try {
         makeBestMove(chess);
         console.log(`Simulation step ${i}`);
+        setPosition(chess.fen());
+        await wait(300); // Wait for 1000 milliseconds (1 second)
       } catch (e) {
         console.log(`loop ${i} error: ${e}`);
       }
     }
-    setPosition(chess.fen());
   }
 
   function undo() {
@@ -71,11 +93,11 @@ function App() {
   return (
     <div>
       <div className="title"> CHESS AI</div>
-      <button onClick={resetBoard}> Reset </button>
-      <button onClick={undo}> Undo </button>
+      <button onClick={resetBoard}> Reset [R] </button>
+      <button onClick={undo}> Undo [U] </button>
 
-      <button onClick={simulation}> Simulate (10 steps) </button>
-      <button onClick={botMove}> AI Move </button>
+      <button onClick={runSimulation}> Simulate (10 steps) [S] </button>
+      <button onClick={botMove}> AI Move [A] </button>
       <div className="container">
         <div>Current Turn: {chess.turn() === "w" ? "White" : "Black"} </div>
       </div>
