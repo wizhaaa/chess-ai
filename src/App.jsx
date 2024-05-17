@@ -12,13 +12,14 @@ function App() {
 
   const [position, setPosition] = useState(DEFAULT_POSITION); // position state to store what our board GUI should render. default to the a new game.
   const [turnNum, setTurnNum] = useState(0);
+  const [play, setPlay] = useState(false);
 
   /*
    * Listens to user keyboard events
    */
   useEffect(() => {
-    if (chess.turn() !== "w") {
-      console.log("Black's turn");
+    if (chess.turn() === "b" && play) {
+      console.log("Bot automatically making move...");
       makeBestMove(chess);
       setPosition(chess.fen());
       setTurnNum(turnNum + 1);
@@ -29,6 +30,7 @@ function App() {
       if (event.key === "u") undo();
       if (event.key === "r") resetBoard();
       if (event.key === "s") runSimulation();
+      if (event.key === "p") setPlay(() => !play);
     };
 
     // Add event listener when component mounts
@@ -38,7 +40,7 @@ function App() {
     return () => {
       document.removeEventListener("keydown", handleKeyPress);
     };
-  }, [position]); // Empty dependency array ensures that the effect runs only once on mount
+  }, [position, play]); // Empty dependency array ensures that the effect runs only once on mount
 
   /** Resets the board to the default position. */
   function resetBoard() {
@@ -114,6 +116,7 @@ function App() {
 
       <button onClick={runSimulation}> Simulate (10 steps) [S] </button>
       <button onClick={botMove}> AI Move [A] </button>
+      <button onClick={() => setPlay(!play)}> Play [P] </button>
       <div className="container">
         <div>
           Current Turn: {chess.turn() === "w" ? "White" : "Black"} [{turnNum}]{" "}
