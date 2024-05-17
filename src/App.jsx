@@ -1,4 +1,4 @@
-import {useState, useMemo, useCallback} from "react";
+import {useState, useMemo} from "react";
 import "./App.css";
 import {Chessboard} from "react-chessboard";
 
@@ -11,13 +11,13 @@ function App() {
   var chess = useMemo(() => new Chess(DEFAULT_POSITION), []);
 
   const [position, setPosition] = useState(DEFAULT_POSITION);
-
-  
+  const [turnNum, setTurnNum] = useState(0);
 
   function resetBoard() {
     try {
-      setPosition(DEFAULT_POSITION);
-      chess = new Chess(DEFAULT_POSITION);
+      chess.clear();
+      chess.load(DEFAULT_POSITION);
+      setPosition(chess.fen());
     } catch (e) {
       console.log(e);
     }
@@ -29,6 +29,8 @@ function App() {
       console.log(from, to);
       chess.move({from, to});
       setPosition(chess.fen());
+      setTurnNum(turnNum + 1);
+
       return true;
     } catch (e) {
       // alert("error");
@@ -37,59 +39,41 @@ function App() {
     }
   }
 
-  function makeAMove(move) {
-    try {
-      chess.move(move);
-      // const gameCopy = game;
-      // const result = gameCopy.move(move);
-      // setGame(gameCopy);
-      // return result;
-    } catch (e) {
-      console.log(e);
-      alert("invalid drop move");
-      return null;
-    }
-  }
-
-  function move() {
-    try {
-      chess.move({from: "a2", to: "a3"});
-
-      setPosition(chess.fen());
-    } catch (e) {
-      console.log(e);
-      alert("Invalid Move");
-    }
-    console.log("Moves available after moves:");
-    console.log(chess.moves());
-  }
-
   function botMove() {
     try {
       console.log("Bot Move Options:");
       console.log(chess.moves());
       const newGame = makeBotMove(chess);
+      setTurnNum(turnNum + 1);
 
       setPosition(newGame.fen());
+      console.log("history: ", chess.history({verbose: true}));
     } catch (e) {
       alert("Error in making bot move");
       console.log(e);
     }
   }
 
+  function simulation() {
+    for (let i = 0; i < 10; i++) {
+      try {
+        makeBotMove(chess);
+        console.log(`Simulation step ${i}`);
+      } catch (e) {
+        console.log(`loop ${i} error: ${e}`);
+      }
+    }
+    setPosition(chess.fen());
+  }
+
   return (
     <div>
       <div className="title"> CHESS AI</div>
       <button onClick={resetBoard}> Reset </button>
-      <button onClick={move}> Move </button>
+      <button onClick={simulation}> Simulate (10 steps) </button>
       <button onClick={botMove}> AI MOVE </button>
       <div className="container">
         <div>Current Turn: {chess.turn() === "w" ? "White" : "Black"} </div>
-        <div>
-          {" "}
-          Last Move: {chess.history({verbose: true})[2]?.from} -{" "}
-          {chess.history({verbose: true})[2]?.to}
-        </div>
       </div>
       <Chessboard
         onPieceDrop={handleDrop}
