@@ -1,10 +1,9 @@
 import {useState, useMemo, useEffect} from "react";
-import "./App.css";
 import {Chessboard} from "react-chessboard";
-
 import {Chess, DEFAULT_POSITION} from "chess.js";
 
 import {makeBestMove} from "./wz_ai";
+import "./App.css";
 
 function App() {
   /* Game logic, state, and positions stored in chess */

@@ -1,32 +1,21 @@
-/*
- * A simple chess AI, by someone who doesn't know how to play chess.
- * Uses the chessboard.js and chess.js libraries.
- *
- * Copyright (c) 2020 Zhang Zeyu
- */
-
-var board = null;
-var game = new Chess();
-var globalSum = 0; // always from black's perspective. Negative for white's perspective.
-
-var positionCount;
-
-var config = {
-  draggable: true,
-  position: "start",
-  onDragStart: onDragStart,
-  onDrop: onDrop,
+// import {Chess} from "chess.js";
+const pieceValues = {
+  p: -100,
+  n: -280,
+  b: -320,
+  r: -479,
+  q: -929,
+  k: -60000,
+  P: 100,
+  N: 280,
+  B: 320,
+  R: 479,
+  Q: 929,
+  K: 60000,
 };
-board = Chessboard("myBoard", config);
-
-timer = null;
-
-/*
- * Piece Square Tables, adapted from Sunfish.py:
- * https://github.com/thomasahle/sunfish/blob/master/sunfish.py
- */
 
 var weights = {p: 100, n: 280, b: 320, r: 479, q: 929, k: 60000, k_e: 60000};
+
 var pst_w = {
   p: [
     [100, 100, 100, 100, 105, 100, 100, 100],
@@ -101,6 +90,7 @@ var pst_w = {
     [-50, -30, -30, -30, -30, -30, -30, -50],
   ],
 };
+
 var pst_b = {
   p: pst_w["p"].slice().reverse(),
   n: pst_w["n"].slice().reverse(),
@@ -114,11 +104,30 @@ var pst_b = {
 var pstOpponent = {w: pst_b, b: pst_w};
 var pstSelf = {w: pst_w, b: pst_b};
 
+// Evaluation function to evaluate the current state of the board
+function evaluateBoard(board) {
+  // Simple evaluation function: count the material advantage of white over black
+
+  let evaluation = 0;
+  let materialScore = 0;
+  board.split(" ").forEach((row) => {
+    row
+      .split("/")
+      .join("")
+      .split("")
+      .forEach((piece) => {
+        materialScore += pieceValues[piece] || 0;
+      });
+  });
+
+  return evaluation;
+}
+
 /*
  * Evaluates the board at this point in time,
  * using the material weights and piece square tables.
  */
-function evaluateBoard(game, move, prevSum, color) {
+function evalBoard(game, move, prevSum, color) {
   if (game.in_checkmate()) {
     // Opponent is in checkmate (good for us)
     if (move.color === color) {
@@ -214,150 +223,85 @@ function evaluateBoard(game, move, prevSum, color) {
   return prevSum;
 }
 
-/*
- * Performs the minimax algorithm to choose the best move: https://en.wikipedia.org/wiki/Minimax (pseudocode provided)
- * Recursively explores all possible moves up to a given depth, and evaluates the game board at the leaves.
- *
- * Basic idea: maximize the minimum value of the position resulting from the opponent's possible following moves.
- * Optimization: alpha-beta pruning: https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning (pseudocode provided)
- *
- * Inputs:
- *  - game:                 the game object.
- *  - depth:                the depth of the recursive tree of all possible moves (i.e. height limit).
- *  - isMaximizingPlayer:   true if the current layer is maximizing, false otherwise.
- *  - sum:                  the sum (evaluation) so far at the current layer.
- *  - color:                the color of the current player.
- *
- * Output:
- *  the best move at the root of the current subtree.
- */
-function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color) {
-  var children = game.ugly_moves({verbose: true});
-
-  // Sort moves randomly, so the same move isn't always picked on ties
-  children.sort(function (a, b) {
-    return 0.5 - Math.random();
-  });
-
-  var currMove;
-  // Maximum depth exceeded or node is a terminal node (no children)
-  if (depth === 0 || children.length === 0) {
-    return [null, sum];
+// Minimax function with alpha-beta pruning
+function minimax(board, depth, maximizingPlayer, alpha, beta) {
+  if (depth === 0 || board.isGameOver()) {
+    return evaluateBoard(board.fen());
   }
 
-  // Find maximum/minimum from list of 'children' (possible moves)
-  var maxValue = Number.NEGATIVE_INFINITY;
-  var minValue = Number.POSITIVE_INFINITY;
-  var bestMove;
-  for (var i = 0; i < children.length; i++) {
-    currMove = children[i];
+  if (maximizingPlayer) {
+    let maxEval = -Infinity;
+    const moves = board.moves();
 
-    // Note: in our case, the 'children' are simply modified game states
-    var currPrettyMove = game.ugly_move(currMove);
-    var newSum = evaluateBoard(game, currPrettyMove, sum, color);
-    var [childBestMove, childValue] = minimax(
-      game,
-      depth - 1,
-      alpha,
-      beta,
-      !isMaximizingPlayer,
-      newSum,
-      color
-    );
+    for (let i = 0; i < moves.length; i++) {
+      board.move(moves[i]);
+      const evaluation = minimax(board, depth - 1, false, alpha, beta);
+      maxEval = Math.max(maxEval, evaluation);
+      alpha = Math.max(alpha, evaluation);
+      board.undo();
 
-    game.undo();
-
-    if (isMaximizingPlayer) {
-      if (childValue > maxValue) {
-        maxValue = childValue;
-        bestMove = currPrettyMove;
-      }
-      if (childValue > alpha) {
-        alpha = childValue;
-      }
-    } else {
-      if (childValue < minValue) {
-        minValue = childValue;
-        bestMove = currPrettyMove;
-      }
-      if (childValue < beta) {
-        beta = childValue;
+      if (beta <= alpha) {
+        break;
       }
     }
+    return maxEval;
+  } else {
+    let minEval = Infinity;
+    const moves = board.moves();
 
-    // Alpha-beta pruning
-    if (alpha >= beta) {
-      break;
+    for (let i = 0; i < moves.length; i++) {
+      board.move(moves[i]);
+      const evaluation = minimax(board, depth - 1, true, alpha, beta);
+      minEval = Math.min(minEval, evaluation);
+      beta = Math.min(beta, evaluation);
+      board.undo();
+
+      if (beta <= alpha) {
+        break;
+      }
+    }
+    return minEval;
+  }
+}
+
+// Function to find the best move using minimax
+function findBestMove(board, depth) {
+  let bestMove = null;
+  let bestEval = -Infinity;
+  const moves = board.moves();
+
+  for (let i = 0; i < moves.length; i++) {
+    board.move(moves[i]);
+    const evaluation = minimax(board, depth - 1, false, -Infinity, Infinity);
+    board.undo();
+
+    if (evaluation > bestEval) {
+      bestEval = evaluation;
+      bestMove = moves[i];
     }
   }
-
-  if (isMaximizingPlayer) {
-    return [bestMove, maxValue];
-  } else {
-    return [bestMove, minValue];
-  }
+  return bestMove;
 }
 
-/*
- * Calculates the best legal move for the given color.
+// Create a new instance of the Chess game
+// const game = new Chess();
+
+// Function to make the bot's move using minimax
+/** makeBotMove
+ * @param game (Chess object)
+ * @returns the fen for the game
  */
-function getBestMove(game, color, currSum) {
-  const depth = 3;
-
-  var [bestMove, bestMoveValue] = minimax(
-    game,
-    depth,
-    Number.NEGATIVE_INFINITY,
-    Number.POSITIVE_INFINITY,
-    true,
-    currSum,
-    color
-  );
-
-  return [bestMove, bestMoveValue];
+export function makeBotMove(game) {
+  const bestMove = findBestMove(game, 3); // Adjust depth for stronger/weaker play
+  game.move(bestMove);
+  console.log("Bot's Move:", bestMove);
+  return game;
 }
 
-/*
- * Makes the best legal move for the given color.
- */
-function makeBestMove(color) {
-  // global sum = 0 to start with ---
-  if (color === "b") {
-    var move = getBestMove(game, color, globalSum)[0];
-  } else {
-    move = getBestMove(game, color, -globalSum)[0];
-  }
+// Example: Make the bot play against itself until the game ends
+// while (!game.game_over()) {
+//   makeBotMove();
+// }
 
-  globalSum = evaluateBoard(game, move, globalSum, "b");
-
-  game.move(move);
-  board.position(game.fen());
-}
-
-/*
- * Plays Computer vs. Computer, starting with a given color.
- */
-function compVsComp(color) {
-  if (!checkStatus({w: "white", b: "black"}[color])) {
-    timer = window.setTimeout(function () {
-      makeBestMove(color);
-      if (color === "w") {
-        color = "b";
-      } else {
-        color = "w";
-      }
-      compVsComp(color);
-    }, 250);
-  }
-}
-
-function onDrop(source, target) {
-  // see if the move is legal
-  var move = game.move({
-    from: source,
-    to: target,
-    promotion: "q", // NOTE: always promote to a queen for example simplicity
-  });
-
-  globalSum = evaluateBoard(game, move, globalSum, "b");
-}
+// Print the final result of the game
+// console.log("Game Over. Result:", game.result());
