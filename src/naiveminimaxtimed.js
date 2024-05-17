@@ -1,8 +1,5 @@
-// import {Chess} from "chess.js";
-
-// Evaluation function to evaluate the current state of the board
+// Evaluation function to evaluate the current state of the board using piece-square tables
 function evaluateBoard(board) {
-  // Simple evaluation function: count the material advantage of white over black
   const pieceValues = {
     p: -100,
     n: -280,
@@ -18,7 +15,7 @@ function evaluateBoard(board) {
     K: 60000,
   };
 
-  var pst_w = {
+  const pst_w = {
     p: [
       [100, 100, 100, 100, 105, 100, 100, 100],
       [78, 83, 86, 73, 102, 82, 85, 90],
@@ -93,44 +90,62 @@ function evaluateBoard(board) {
     ],
   };
 
-  var pst_b = {
-    p: pst_w["p"].slice().reverse(),
-    n: pst_w["n"].slice().reverse(),
-    b: pst_w["b"].slice().reverse(),
-    r: pst_w["r"].slice().reverse(),
-    q: pst_w["q"].slice().reverse(),
-    k: pst_w["k"].slice().reverse(),
-    k_e: pst_w["k_e"].slice().reverse(),
+  const pst_b = {
+    p: pst_w.p.slice().reverse(),
+    n: pst_w.n.slice().reverse(),
+    b: pst_w.b.slice().reverse(),
+    r: pst_w.r.slice().reverse(),
+    q: pst_w.q.slice().reverse(),
+    k: pst_w.k.slice().reverse(),
+    k_e: pst_w.k_e.slice().reverse(),
   };
 
-  var pstBlack = {w: pst_b, b: pst_w};
-  var pstWhite = {w: pst_w, b: pst_b};
+  const pst = {w: pst_w, b: pst_b};
 
   let evaluation = 0;
-  board.split(" ").forEach((row) => {
-    row
-      .split("/")
-      .join("")
-      .split("")
-      .forEach((piece) => {
-        evaluation += pieceValues[piece] || 0;
+  board
+    .split(" ")[0]
+    .split("/")
+    .forEach((row, rowIndex) => {
+      row.split("").forEach((piece, colIndex) => {
+        if (pieceValues[piece] !== undefined) {
+          const isWhite = piece === piece.toUpperCase();
+          const pieceType = piece.toLowerCase();
+          evaluation += pieceValues[piece];
+          evaluation += isWhite
+            ? pst.w[pieceType][rowIndex][colIndex]
+            : pst.b[pieceType][rowIndex][colIndex];
+        }
       });
-  });
+    });
   return evaluation;
 }
 
-// Minimax function with alpha-beta pruning
+let nodesSearched = 0;
+
+// Minimax function with alpha-beta pruning and move ordering
 function minimax(board, depth, maximizingPlayer, alpha, beta) {
+  nodesSearched++;
   if (depth === 0 || board.isGameOver()) {
     return evaluateBoard(board.fen());
   }
 
+  const moves = board.moves();
+
+  // Order moves using evaluation function
+  const orderedMoves = moves
+    .map((move) => {
+      board.move(move);
+      const evaluation = evaluateBoard(board.fen());
+      board.undo();
+      return {move, evaluation};
+    })
+    .sort((a, b) => b.evaluation - a.evaluation);
+
   if (maximizingPlayer) {
     let maxEval = -Infinity;
-    const moves = board.moves();
-
-    for (let i = 0; i < moves.length; i++) {
-      board.move(moves[i]);
+    for (let i = 0; i < orderedMoves.length; i++) {
+      board.move(orderedMoves[i].move);
       const evaluation = minimax(board, depth - 1, false, alpha, beta);
       maxEval = Math.max(maxEval, evaluation);
       alpha = Math.max(alpha, evaluation);
@@ -143,10 +158,8 @@ function minimax(board, depth, maximizingPlayer, alpha, beta) {
     return maxEval;
   } else {
     let minEval = Infinity;
-    const moves = board.moves();
-
-    for (let i = 0; i < moves.length; i++) {
-      board.move(moves[i]);
+    for (let i = 0; i < orderedMoves.length; i++) {
+      board.move(orderedMoves[i].move);
       const evaluation = minimax(board, depth - 1, true, alpha, beta);
       minEval = Math.min(minEval, evaluation);
       beta = Math.min(beta, evaluation);
@@ -166,29 +179,40 @@ function findBestMove(board, depth) {
   let bestEval = -Infinity;
   const moves = board.moves();
 
-  for (let i = 0; i < moves.length; i++) {
-    board.move(moves[i]);
+  // Order moves using evaluation function
+  const orderedMoves = moves
+    .map((move) => {
+      board.move(move);
+      const evaluation = evaluateBoard(board.fen());
+      board.undo();
+      return {move, evaluation};
+    })
+    .sort((a, b) => b.evaluation - a.evaluation);
+
+  for (let i = 0; i < orderedMoves.length; i++) {
+    board.move(orderedMoves[i].move);
     const evaluation = minimax(board, depth - 1, false, -Infinity, Infinity);
     board.undo();
 
     if (evaluation > bestEval) {
       bestEval = evaluation;
-      bestMove = moves[i];
+      bestMove = orderedMoves[i].move;
     }
   }
   return bestMove;
 }
-
-// Create a new instance of the Chess game
-// const game = new Chess();
 
 // Function to make the bot's move using minimax
 /** makeBotMove
  * @param game (Chess object)
  * @returns the fen for the game
  */
-export function makeBotMove(game) {
+export function naiveBotMoveTimed(game) {
+  nodesSearched = 0;
+  console.time("searchTime");
   const bestMove = findBestMove(game, 3); // Adjust depth for stronger/weaker play
+  console.timeEnd("searchTime");
+  console.log("Nodes Searched:", nodesSearched);
   game.move(bestMove);
   console.log("Bot's Move:", bestMove);
   return game;
@@ -196,7 +220,7 @@ export function makeBotMove(game) {
 
 // Example: Make the bot play against itself until the game ends
 // while (!game.game_over()) {
-//   makeBotMove();
+//   makeBotMove(game);
 // }
 
 // Print the final result of the game
