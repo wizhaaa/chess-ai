@@ -30,6 +30,9 @@ function App() {
       if (event.key === "r") resetBoard();
       if (event.key === "s") runSimulation();
       if (event.key === "p") setPlay(() => !play);
+      if (event.key === "m") {
+        chess.move({from: "e4", to: "e5"});
+      }
     };
 
     // Add event listener when component mounts
@@ -88,7 +91,7 @@ function App() {
 
   /** Runs a simulation for 10 moves of the bot against itself. */
   async function runSimulation() {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 200; i++) {
       try {
         // if (i % 2 === 0) ericBotMove(chess);
         // else
@@ -98,6 +101,7 @@ function App() {
         await wait(300); // Wait for 1000 milliseconds (1 second)
       } catch (e) {
         console.log(`loop ${i} error: ${e}`);
+        console.log("Chess Game:", chess);
       }
     }
   }
