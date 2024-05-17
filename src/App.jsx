@@ -66,12 +66,19 @@ function App() {
     setPosition(chess.fen());
   }
 
+  function undo() {
+    chess.undo();
+    setPosition(chess.fen());
+  }
+
   return (
     <div>
       <div className="title"> CHESS AI</div>
       <button onClick={resetBoard}> Reset </button>
+      <button onClick={undo}> Undo </button>
+
       <button onClick={simulation}> Simulate (10 steps) </button>
-      <button onClick={botMove}> AI MOVE </button>
+      <button onClick={botMove}> AI Move </button>
       <div className="container">
         <div>Current Turn: {chess.turn() === "w" ? "White" : "Black"} </div>
       </div>
