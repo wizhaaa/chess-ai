@@ -194,8 +194,14 @@ export function makeBestMove(game) {
 }
 
 function getBestMove(game) {
-  if (game.isGameOver()) {
+  if (
+    game.isGameOver() ||
+    game.isDraw() ||
+    game.isStalemate() ||
+    game.isInsufficientMaterial()
+  ) {
     console.log("Game Over");
+    return;
   }
   // let positionCount = 0;
   var depth = calculateDepth(game);
