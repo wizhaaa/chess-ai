@@ -4,7 +4,12 @@ import {Chessboard} from "react-chessboard";
 
 import {Chess, DEFAULT_POSITION} from "chess.js";
 
-import {makeBotMove} from "./AI";
+// import { makeBotMove } from "./AI";
+// import {makeBotMove} from "./eric";
+
+// import {zeyuBotMove} from "./zeyu_modified";
+
+import {makeBestMove} from "./wz_ai";
 
 function App() {
   // game logic
@@ -41,15 +46,12 @@ function App() {
 
   function botMove() {
     try {
-      console.log("Bot Move Options:");
-      console.log(chess.moves());
-      const newGame = makeBotMove(chess);
-      setTurnNum(turnNum + 1);
+      // const newGame = makeBotMove(chess);
+      const chess2 = makeBestMove(chess);
 
-      setPosition(newGame.fen());
-      console.log("history: ", chess.history({verbose: true}));
+      setPosition(chess2.fen());
     } catch (e) {
-      alert("Error in making bot move");
+      // alert("Error in making bot move");
       console.log(e);
     }
   }
@@ -57,7 +59,7 @@ function App() {
   function simulation() {
     for (let i = 0; i < 10; i++) {
       try {
-        makeBotMove(chess);
+        makeBestMove(chess);
         console.log(`Simulation step ${i}`);
       } catch (e) {
         console.log(`loop ${i} error: ${e}`);
