@@ -7,13 +7,23 @@ import {Chess, DEFAULT_POSITION} from "chess.js";
 import {makeBestMove} from "./wz_ai";
 
 function App() {
-  // game logic
+  /* Game logic, state, and positions stored in chess */
   var chess = useMemo(() => new Chess(DEFAULT_POSITION), []);
 
-  const [position, setPosition] = useState(DEFAULT_POSITION);
+  const [position, setPosition] = useState(DEFAULT_POSITION); // position state to store what our board GUI should render. default to the a new game.
   const [turnNum, setTurnNum] = useState(0);
 
+  /*
+   * Listens to user keyboard events
+   */
   useEffect(() => {
+    if (chess.turn() !== "w") {
+      console.log("Black's turn");
+      makeBestMove(chess);
+      setPosition(chess.fen());
+      setTurnNum(turnNum + 1);
+    }
+
     const handleKeyPress = (event) => {
       if (event.key === "a") botMove();
       if (event.key === "u") undo();
@@ -28,8 +38,9 @@ function App() {
     return () => {
       document.removeEventListener("keydown", handleKeyPress);
     };
-  }, []); // Empty dependency array ensures that the effect runs only once on mount
+  }, [position]); // Empty dependency array ensures that the effect runs only once on mount
 
+  /** Resets the board to the default position. */
   function resetBoard() {
     try {
       chess.clear();
@@ -40,11 +51,12 @@ function App() {
     }
   }
 
+  /** Allows for player movement to control the board. */
   function handleDrop(from, to) {
     console.log("drop");
     try {
       console.log(from, to);
-      chess.move({from, to});
+      chess.move({from: from, to: to, promotion: "q"});
       setPosition(chess.fen());
       setTurnNum(turnNum + 1);
 
@@ -56,6 +68,7 @@ function App() {
     }
   }
 
+  /** Bot makes the next best move given a game state. */
   function botMove() {
     try {
       // const newGame = makeBotMove(chess);
@@ -72,9 +85,12 @@ function App() {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  /** Runs a simulation for 10 moves of the bot against itself. */
   async function runSimulation() {
     for (let i = 0; i < 10; i++) {
       try {
+        // if (i % 2 === 0) ericBotMove(chess);
+        // else
         makeBestMove(chess);
         console.log(`Simulation step ${i}`);
         setPosition(chess.fen());
@@ -99,7 +115,9 @@ function App() {
       <button onClick={runSimulation}> Simulate (10 steps) [S] </button>
       <button onClick={botMove}> AI Move [A] </button>
       <div className="container">
-        <div>Current Turn: {chess.turn() === "w" ? "White" : "Black"} </div>
+        <div>
+          Current Turn: {chess.turn() === "w" ? "White" : "Black"} [{turnNum}]{" "}
+        </div>
       </div>
       <Chessboard
         onPieceDrop={handleDrop}
