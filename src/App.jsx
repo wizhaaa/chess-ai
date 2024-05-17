@@ -4,11 +4,6 @@ import {Chessboard} from "react-chessboard";
 
 import {Chess, DEFAULT_POSITION} from "chess.js";
 
-// import { makeBotMove } from "./AI";
-// import {makeBotMove} from "./eric";
-
-// import {zeyuBotMove} from "./zeyu_modified";
-
 import {makeBestMove} from "./wz_ai";
 
 function App() {
